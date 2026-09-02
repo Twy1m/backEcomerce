@@ -1,27 +1,31 @@
 const { DataTypes } = require("sequelize")
 const conn = require("../db/conn")
 
-const Categoria = conn.define(
-	"categoria",
+const ImgProduto = conn.define(
+	"imgProduto",
 	{
-		codCategoria: {
+		codImg: {
 			type: DataTypes.INTEGER,
 			primaryKey: true,
 			allowNull: false
 		},
-		nome: {
-			type: DataTypes.STRING(50),
-			allowNull: false
-		},
-		descricao: {
+		idProduto: {
 			type: DataTypes.TEXT,
-			allowNull: false
+			allowNull: false,
+			references: {
+				key: 'codProduto',
+				model: 'produtos'
+			}
+		},
+		urlImagem: {
+			type: DataTypes.STRING(150),
+			allowNull:false
 		}
 	},
 	{
-		tableName: "categorias",
+		tableName: "imgProdutos",
 		timesamps: false
 	}
 )
 
-module.exports = Categoria
+module.exports = ImgProduto
