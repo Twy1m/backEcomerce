@@ -1,38 +1,42 @@
 const { DataTypes } = require("sequelize")
 const conn = require("../db/conn")
 
-const Pedido = conn.define(
-	"pedido",
+const ItemPedido = conn.define(
+	"itemPedido",
 	{
-		codImg: {
+		codItemPedido: {
 			type: DataTypes.INTEGER,
 			primaryKey: true,
-			allowNull: false
+			autoIncrement: true
 		},
-		idUsuario: {
-			type: DataTypes.TEXT,
+		idPedido: {
+			type: DataTypes.INTEGER,
 			allowNull: false,
 			references: {
-				key: "codUsuario",
-				model: "usuarios"
+				model: "pedidos",
+				key: "codPedido"
 			}
 		},
-		valorTotal: {
+		idProduto: {
+			type: DataTypes.INTEGER,
+			allowNull: false,
+			references: {
+				model: "produtos",
+				key: "codProduto"
+			}
+		},
+		quantidade: {
+			type: DataTypes.INTEGER,
+			allowNull: false
+		},
+		preco_unitario: {
 			type: DataTypes.DECIMAL(10, 2),
-			allowNull: false
-		},
-		status: {
-			type: DataTypes.ENUM("PENDENTE", "PAGO"),
-			allowNull: false
-		},
-		data: {
-			type: DataTypes.DATE,
 			allowNull: false
 		}
 	},
 	{
-		tableName: "pedidos"
+		tableName: "itens_pedido",
 	}
 )
 
-module.exports = Pedido
+module.exports = ItemPedido

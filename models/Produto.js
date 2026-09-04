@@ -7,10 +7,10 @@ const Produto = conn.define(
 		codProduto: {
 			type: DataTypes.INTEGER,
 			primaryKey: true,
-			allowNull: false
+			autoIncrement: true
 		},
 		nome: {
-			type: DataTypes.STRING(50),
+			type: DataTypes.STRING(150),
 			allowNull: false
 		},
 		descricao: {
@@ -26,29 +26,31 @@ const Produto = conn.define(
 			allowNull: false
 		},
 		idCategoria: {
-			type: DataTypes.STRING(15),
+			type: DataTypes.INTEGER,
 			allowNull: false,
-            references: {
-                model: 'categorias',
-                key: 'codCategoria'
-            }
+			references: {
+				model: "categorias",
+				key: "codCategoria"
+			}
 		},
 		visualizacoes: {
-			type: DataTypes.INTEGER("USER", "ADMIN"),
-			allowNull: false
+			type: DataTypes.INTEGER,
+			allowNull: false,
+			defaultValue: 0
 		},
-		desconto: {
-			type: DataTypes.DECIMAL(1,2),
-			allowNull: false
+		promocao: {
+			type: DataTypes.BOOLEAN,
+			allowNull: false,
+			defaultValue: false
 		},
-        imgPrincipal: {
-            type: DataTypes.TEXT,
-            allowNull: false
-        }
+		imagem_principal: {
+			type: DataTypes.STRING(255),
+			allowNull: false
+		}
 	},
 	{
 		tableName: "produtos",
-		timesamps: false
+		timestamps: false
 	}
 )
 

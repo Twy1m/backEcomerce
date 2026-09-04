@@ -7,10 +7,10 @@ const Categoria = conn.define(
 		codCategoria: {
 			type: DataTypes.INTEGER,
 			primaryKey: true,
-			allowNull: false
+			autoIncrement: true
 		},
 		nome: {
-			type: DataTypes.STRING(50),
+			type: DataTypes.STRING(100),
 			allowNull: false
 		},
 		descricao: {
@@ -20,7 +20,7 @@ const Categoria = conn.define(
 	},
 	{
 		tableName: "categorias",
-		timesamps: false
+		timestamps: false
 	}
 )
 

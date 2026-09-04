@@ -1,13 +1,21 @@
 const { DataTypes } = require("sequelize")
 const conn = require("../db/conn")
 
-const ImagemProduto = conn.define(
-	"imagemProduto",
+const ItemCarrinho = conn.define(
+	"itemCarrinho",
 	{
-		codImagemProduto: {
+		codItemCarrinho: {
 			type: DataTypes.INTEGER,
 			primaryKey: true,
 			autoIncrement: true
+		},
+		idCarrinho: {
+			type: DataTypes.INTEGER,
+			allowNull: false,
+			references: {
+				model: "carrinho",
+				key: "codCarrinho"
+			}
 		},
 		idProduto: {
 			type: DataTypes.INTEGER,
@@ -17,15 +25,15 @@ const ImagemProduto = conn.define(
 				key: "codProduto"
 			}
 		},
-		url_imagem: {
-			type: DataTypes.STRING(255),
+		quantidade: {
+			type: DataTypes.INTEGER,
 			allowNull: false
 		}
 	},
 	{
-		tableName: "imagens_produto",
+		tableName: "itens_carrinho",
 		timestamps: false
 	}
 )
 
-module.exports = ImagemProduto
+module.exports = ItemCarrinho

@@ -1,9 +1,9 @@
-const Sequelize = require('sequelize')
+const Sequelize = require("sequelize")
 
-const conn = require('artlist', 'root', 'senai', {
-    hostname: 'localhost',
-    dialect: 'mysql',
-    port: 3306
+const conn = new Sequelize("artlist", "root", "senai", {
+	host: "localhost",
+	dialect: "mysql",
+	port: 3306
 })
 
 module.exports = conn

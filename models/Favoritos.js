@@ -1,10 +1,10 @@
 const { DataTypes } = require("sequelize")
 const conn = require("../db/conn")
 
-const Pedido = conn.define(
-	"pedido",
+const Favorito = conn.define(
+	"favorito",
 	{
-		codPedido: {
+		codFavorito: {
 			type: DataTypes.INTEGER,
 			primaryKey: true,
 			autoIncrement: true
@@ -17,19 +17,19 @@ const Pedido = conn.define(
 				key: "codUsuario"
 			}
 		},
-		valor_total: {
-			type: DataTypes.DECIMAL(10, 2),
-			allowNull: false
-		},
-		status: {
-			type: DataTypes.ENUM("PENDENTE", "PAGO"),
+		idProduto: {
+			type: DataTypes.INTEGER,
 			allowNull: false,
-			defaultValue: "PENDENTE"
+			references: {
+				model: "produtos",
+				key: "codProduto"
+			}
 		}
 	},
 	{
-		tableName: "pedidos"
+		tableName: "favoritos",
+		timestamps: false
 	}
 )
 
-module.exports = Pedido
+module.exports = Favorito
