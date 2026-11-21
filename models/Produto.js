@@ -46,6 +46,11 @@ const Produto = conn.define(
 		imagem_principal: {
 			type: DataTypes.STRING(255),
 			allowNull: false
+		},
+		ativo: {
+			type: DataTypes.BOOLEAN,
+			allowNull: false,
+			defaultValue: true
 		}
 	},
 	{

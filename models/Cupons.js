@@ -11,8 +11,7 @@ const Cupom = conn.define(
 		},
 		codigo: {
 			type: DataTypes.STRING(50),
-			allowNull: false,
-			unique: true
+			allowNull: false
 		},
 		desconto: {
 			type: DataTypes.DECIMAL(5, 2),
@@ -20,6 +19,10 @@ const Cupom = conn.define(
 		},
 		validade: {
 			type: DataTypes.DATE,
+			allowNull: false
+		},
+		usos: {
+			type: DataTypes.INTEGER,
 			allowNull: false
 		},
 		ativo: {
@@ -30,7 +33,11 @@ const Cupom = conn.define(
 	},
 	{
 		tableName: "cupons",
-		timestamps: false
+		timestamps: false,
+		// código único (índice com nome fixo para o sync não duplicar)
+		indexes: [
+			{ name: "cupons_codigo_unique", unique: true, fields: ["codigo"] }
+		]
 	}
 )
 

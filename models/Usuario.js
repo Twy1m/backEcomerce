@@ -15,8 +15,7 @@ const Usuario = conn.define(
 		},
 		email: {
 			type: DataTypes.STRING(150),
-			allowNull: false,
-			unique: true
+			allowNull: false
 		},
 		senha: {
 			type: DataTypes.STRING(255),
@@ -24,8 +23,7 @@ const Usuario = conn.define(
 		},
 		cpf: {
 			type: DataTypes.STRING(14),
-			allowNull: false,
-			unique: true
+			allowNull: false
 		},
 		tipo: {
 			type: DataTypes.ENUM("admin", "user"),
@@ -35,8 +33,15 @@ const Usuario = conn.define(
 	},
 	{
 		tableName: "usuarios",
-		timestamps: false
+		timestamps: false,
+		indexes: [
+			{ name: "usuarios_email_unique", unique: true, fields: ["email"] },
+			{ name: "usuarios_cpf_unique", unique: true, fields: ["cpf"] }
+		]
 	}
 )
 
 module.exports = Usuario
+
+// e-mail e CPF únicos. Ficam aqui, com nome fixo, e não como "unique: true" no campo,
+// porque o sync({ alter: true }) cria um índice repetido a cada execução nesse caso.

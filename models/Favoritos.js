@@ -29,6 +29,7 @@ const Favorito = conn.define(
 	{
 		tableName: "favoritos",
 		timestamps: false
+		// a restrição única (idUsuario + idProduto) já é criada pelo belongsToMany no rel.js
 	}
 )
 

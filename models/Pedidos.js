@@ -21,8 +21,17 @@ const Pedido = conn.define(
 			type: DataTypes.DECIMAL(10, 2),
 			allowNull: false
 		},
+		desconto: {
+			type: DataTypes.DECIMAL(10, 2),
+			allowNull: false,
+			defaultValue: 0
+		},
+		codigo_cupom: {
+			type: DataTypes.STRING(50),
+			allowNull: true
+		},
 		status: {
-			type: DataTypes.ENUM("PENDENTE", "PAGO"),
+			type: DataTypes.ENUM("PENDENTE", "PAGO", "ENVIADO", "ENTREGUE", "CANCELADO"),
 			allowNull: false,
 			defaultValue: "PENDENTE"
 		}

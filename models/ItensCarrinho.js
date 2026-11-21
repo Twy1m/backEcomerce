@@ -33,6 +33,7 @@ const ItemCarrinho = conn.define(
 	{
 		tableName: "itens_carrinho",
 		timestamps: false
+		// a restrição única (idCarrinho + idProduto) já é criada pelo belongsToMany no rel.js
 	}
 )
 

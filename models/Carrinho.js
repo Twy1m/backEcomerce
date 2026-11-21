@@ -20,6 +20,10 @@ const Carrinho = conn.define(
 	},
 	{
 		tableName: "carrinho",
+		// um carrinho por usuário (índice com nome fixo para o sync não duplicar)
+		indexes: [
+			{ name: "carrinho_idUsuario_unique", unique: true, fields: ["idUsuario"] }
+		]
 	}
 )
 
