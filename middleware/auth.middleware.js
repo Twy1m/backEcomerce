@@ -24,6 +24,24 @@ function autenticar(req, res, next) {
 	}
 }
 
+// Para rotas públicas que mudam um pouco quando quem chama é admin
+// (ex.: o admin pode ver produtos desativados). Se vier um token válido, preenche
+// req.usuario; se não vier nada ou o token for inválido, segue como visitante.
+function autenticarOpcional(req, res, next) {
+	const authHeader = req.headers.authorization
+
+	if (authHeader && authHeader.startsWith("Bearer ")) {
+		try {
+			const dados = verificarToken(authHeader.split(" ")[1])
+			req.usuario = { codUsuario: dados.codUsuario, tipo: dados.tipo }
+		} catch (err) {
+			// token inválido em rota pública: só ignora
+		}
+	}
+
+	next()
+}
+
 // Só deixa passar administradores. Usar sempre DEPOIS do autenticar.
 function somenteAdmin(req, res, next) {
 	if (!req.usuario || req.usuario.tipo !== "admin") {
@@ -43,6 +61,7 @@ function proprioOuAdmin(req, res, next) {
 
 module.exports = {
 	autenticar,
+	autenticarOpcional,
 	somenteAdmin,
 	proprioOuAdmin
 }

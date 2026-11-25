@@ -15,7 +15,10 @@ const Pedido = conn.define(
 			references: {
 				model: "usuarios",
 				key: "codUsuario"
-			}
+			},
+			// o padrão do Sequelize é CASCADE (apagar o usuário apagaria os pedidos dele).
+			// RESTRICT faz o banco recusar apagar um usuário que tem pedidos.
+			onDelete: "RESTRICT"
 		},
 		valor_total: {
 			type: DataTypes.DECIMAL(10, 2),

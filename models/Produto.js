@@ -31,7 +31,9 @@ const Produto = conn.define(
 			references: {
 				model: "categorias",
 				key: "codCategoria"
-			}
+			},
+			// apagar uma categoria não pode apagar os produtos dela junto
+			onDelete: "RESTRICT"
 		},
 		visualizacoes: {
 			type: DataTypes.INTEGER,

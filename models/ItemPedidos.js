@@ -23,7 +23,9 @@ const ItemPedido = conn.define(
 			references: {
 				model: "produtos",
 				key: "codProduto"
-			}
+			},
+			// produto que já foi vendido não pode ser apagado (o histórico do pedido aponta para ele)
+			onDelete: "RESTRICT"
 		},
 		quantidade: {
 			type: DataTypes.INTEGER,

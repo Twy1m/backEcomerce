@@ -108,12 +108,13 @@ async function excluir(id) {
 		throw new AppError("Usuário não encontrado", 404)
 	}
 
+	// Carrinho e favoritos são apagados junto (CASCADE no banco).
+	// Pedidos não: o banco recusa (RESTRICT), para não perder o histórico de vendas.
 	try {
 		await usuario.destroy()
 	} catch (err) {
-		// O banco impede apagar um usuário que tem pedidos, carrinho ou favoritos
 		if (err.name === "SequelizeForeignKeyConstraintError") {
-			throw new AppError("Não é possível excluir: o usuário tem pedidos, carrinho ou favoritos", 409)
+			throw new AppError("Não é possível excluir: o usuário tem pedidos registrados", 409)
 		}
 		throw err
 	}
