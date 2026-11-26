@@ -8,6 +8,20 @@ const Carrinho = require("./Carrinho")
 const ItemCarrinho = require("./ItensCarrinho")
 const Favorito = require("./Favoritos")
 const Cupom = require("./Cupons")
+const Endereco = require("./Enderecos")
+
+// excluir o usuário apaga os endereços dele junto
+Usuario.hasMany(Endereco, {
+	foreignKey: "idUsuario",
+	as: "enderecos",
+	onDelete: "CASCADE"
+})
+
+Endereco.belongsTo(Usuario, {
+	foreignKey: "idUsuario",
+	as: "usuario",
+	onDelete: "CASCADE"
+})
 
 Categoria.hasMany(Produto, {
 	foreignKey: "idCategoria",
@@ -161,5 +175,6 @@ module.exports = {
 	Carrinho,
 	ItemCarrinho,
 	Favorito,
-	Cupom
+	Cupom,
+	Endereco
 }

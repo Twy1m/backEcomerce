@@ -22,6 +22,16 @@ async function adicionarItem(req, res) {
 	}
 }
 
+// body: { itens: [{ idProduto, quantidade }, ...] }  →  carrinho + naoAdicionados
+async function mesclar(req, res) {
+	try {
+		const carrinho = await carrinhoService.mesclar(req.usuario.codUsuario, req.body)
+		res.status(200).json(carrinho)
+	} catch (err) {
+		tratarErro(res, err)
+	}
+}
+
 async function alterarQuantidade(req, res) {
 	try {
 		const carrinho = await carrinhoService.alterarQuantidade(req.usuario.codUsuario, req.params.id, req.body)
@@ -52,6 +62,7 @@ async function esvaziar(req, res) {
 module.exports = {
 	ver,
 	adicionarItem,
+	mesclar,
 	alterarQuantidade,
 	removerItem,
 	esvaziar

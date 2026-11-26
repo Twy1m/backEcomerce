@@ -90,6 +90,20 @@ async function ver(idUsuario) {
 	}
 }
 
+// Roda a transação de novo quando duas requisições tentam CRIAR a mesma linha ao mesmo tempo:
+// o índice único (idCarrinho + idProduto) recusa uma delas (ou o MySQL acusa deadlock),
+// e na segunda tentativa ela já encontra a linha criada pela outra.
+async function transacaoComRetentativa(fn, maxTentativas = 5) {
+	for (let tentativa = 1; ; tentativa++) {
+		try {
+			return await conn.transaction(fn)
+		} catch (err) {
+			const colisao = err.name === "SequelizeUniqueConstraintError" || err.parent?.code === "ER_LOCK_DEADLOCK"
+			if (!colisao || tentativa >= maxTentativas) throw err
+		}
+	}
+}
+
 // Se o produto já está no carrinho, soma a quantidade em vez de criar outra linha
 async function adicionarItem(idUsuario, { idProduto, quantidade = 1 }) {
 	const id = paraInteiroPositivo(idProduto, "idProduto")
@@ -105,29 +119,100 @@ async function adicionarItem(idUsuario, { idProduto, quantidade = 1 }) {
 
 	// Cliques rápidos no "adicionar" chegam juntos. A transação trava a linha do item
 	// (lock), então cada clique espera o anterior terminar e a soma nunca se perde.
-	// Se dois tentarem CRIAR a linha ao mesmo tempo, o banco recusa um deles
-	// (índice único ou deadlock) e ele tenta de novo, já encontrando a linha criada.
-	for (let tentativa = 1; ; tentativa++) {
-		try {
-			await conn.transaction(async (t) => {
-				const existente = await ItemCarrinho.findOne({ where, transaction: t, lock: t.LOCK.UPDATE })
-				const novaQuantidade = (existente ? existente.quantidade : 0) + qtd
-				validarEstoque(produto, novaQuantidade)
+	await transacaoComRetentativa(async (t) => {
+		const existente = await ItemCarrinho.findOne({ where, transaction: t, lock: t.LOCK.UPDATE })
+		const novaQuantidade = (existente ? existente.quantidade : 0) + qtd
+		validarEstoque(produto, novaQuantidade)
 
-				if (existente) {
-					await existente.update({ quantidade: novaQuantidade }, { transaction: t })
-				} else {
-					await ItemCarrinho.create({ ...where, quantidade: qtd }, { transaction: t })
-				}
-			})
-			break
-		} catch (err) {
-			const colisao = err.name === "SequelizeUniqueConstraintError" || err.parent?.code === "ER_LOCK_DEADLOCK"
-			if (!colisao || tentativa >= 5) throw err
+		if (existente) {
+			await existente.update({ quantidade: novaQuantidade }, { transaction: t })
+		} else {
+			await ItemCarrinho.create({ ...where, quantidade: qtd }, { transaction: t })
 		}
-	}
+	})
 
 	return ver(idUsuario)
+}
+
+const MAX_ITENS_MERGE = 100
+
+// Junta o carrinho de visitante (guardado no localStorage do front) ao carrinho do usuário,
+// tudo numa transação só. Cada item SOMA ao que já existe. O que passar do estoque entra
+// limitado ao estoque, e o que sobrou volta em "naoAdicionados" para o front avisar.
+async function mesclar(idUsuario, { itens } = {}) {
+	if (!Array.isArray(itens) || itens.length === 0) {
+		throw new AppError("Envie os itens do carrinho")
+	}
+	if (itens.length > MAX_ITENS_MERGE) {
+		throw new AppError(`Envie no máximo ${MAX_ITENS_MERGE} itens`)
+	}
+
+	// valida tudo antes de abrir a transação; o mesmo produto repetido vira uma linha só
+	const pedidos = new Map()
+	for (const item of itens) {
+		const id = paraInteiroPositivo(item?.idProduto, "idProduto")
+		const qtd = paraInteiroPositivo(item?.quantidade, "quantidade")
+		pedidos.set(id, (pedidos.get(id) || 0) + qtd)
+	}
+	const ids = [...pedidos.keys()].sort((a, b) => a - b)
+
+	let naoAdicionados = []
+
+	await transacaoComRetentativa(async (t) => {
+		naoAdicionados = [] // zera se a transação for repetida
+		const carrinho = await obterOuCriarCarrinho(idUsuario, t)
+
+		const produtos = await Produto.findAll({ where: { codProduto: ids }, transaction: t })
+		const produtoPorId = new Map(produtos.map((p) => [p.codProduto, p]))
+
+		// trava as linhas que já existem, como no adicionarItem
+		const existentes = await ItemCarrinho.findAll({
+			where: { idCarrinho: carrinho.codCarrinho, idProduto: ids },
+			transaction: t,
+			lock: t.LOCK.UPDATE
+		})
+		const existentePorId = new Map(existentes.map((i) => [i.idProduto, i]))
+
+		for (const id of ids) {
+			const qtd = pedidos.get(id)
+			const produto = produtoPorId.get(id)
+
+			if (!produto || !produto.ativo) {
+				naoAdicionados.push({ idProduto: id, quantidade: qtd, motivo: "Produto não está mais disponível" })
+				continue
+			}
+
+			const existente = existentePorId.get(id)
+			const atual = existente ? existente.quantidade : 0
+			const desejada = atual + qtd
+			const final = Math.min(desejada, produto.estoque)
+
+			if (final < desejada) {
+				naoAdicionados.push({
+					idProduto: id,
+					nome: produto.nome,
+					quantidade: desejada - final,
+					motivo:
+						produto.estoque === 0
+							? `${produto.nome} está sem estoque`
+							: `Só temos ${produto.estoque} unidade(s) de ${produto.nome} em estoque`
+				})
+			}
+
+			if (final <= atual) continue // nada a acrescentar (nunca diminui o que já estava lá)
+
+			if (existente) {
+				await existente.update({ quantidade: final }, { transaction: t })
+			} else {
+				await ItemCarrinho.create(
+					{ idCarrinho: carrinho.codCarrinho, idProduto: id, quantidade: final },
+					{ transaction: t }
+				)
+			}
+		}
+	})
+
+	return { ...(await ver(idUsuario)), naoAdicionados }
 }
 
 async function alterarQuantidade(idUsuario, idItem, { quantidade }) {
@@ -159,6 +244,7 @@ module.exports = {
 	obterOuCriarCarrinho,
 	ver,
 	adicionarItem,
+	mesclar,
 	alterarQuantidade,
 	removerItem,
 	esvaziar

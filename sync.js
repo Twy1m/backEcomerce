@@ -1,4 +1,4 @@
-const { Usuario, Categoria, Produto, ImagemProduto, Pedido, ItemPedido, Carrinho, ItemCarrinho, Favorito, Cupom } = require('./models/rel')
+const { Usuario, Categoria, Produto, ImagemProduto, Pedido, ItemPedido, Carrinho, ItemCarrinho, Favorito, Cupom, Endereco } = require('./models/rel')
 const conn = require('./db/conn')
 async function syncDataBase() {
     try{

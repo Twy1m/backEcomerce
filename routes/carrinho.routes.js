@@ -11,6 +11,7 @@ router.get("/", carrinhoController.ver)
 router.delete("/", carrinhoController.esvaziar)
 
 router.post("/itens", carrinhoController.adicionarItem)
+router.post("/merge", carrinhoController.mesclar) // carrinho de visitante → carrinho do usuário, de uma vez
 router.put("/itens/:id", carrinhoController.alterarQuantidade)
 router.delete("/itens/:id", carrinhoController.removerItem)
 

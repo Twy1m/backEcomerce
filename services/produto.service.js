@@ -103,7 +103,8 @@ async function montarDados(body, obrigatorio) {
 // ---------- produtos ----------
 
 // Filtros (todos opcionais, vêm da query string):
-// ?categoria=1  ?busca=canon  ?precoMin=100&precoMax=500  ?promocao=true  ?ordenar=preco_asc
+// ?categoria=1  ?busca=canon  ?precoMin=100&precoMax=500  ?promocao=true  ?emEstoque=true
+// ?ordenar=preco_asc  ?limite=6
 // Visitantes só veem produtos ativos. Admin pode pedir ?inativos=true para ver todos.
 async function listar(filtros = {}, ehAdmin = false) {
 	const where = {}
@@ -116,19 +117,35 @@ async function listar(filtros = {}, ehAdmin = false) {
 		where.idCategoria = paraNumero(filtros.categoria, "categoria")
 	}
 
-	if (filtros.busca) {
-		const termo = `%${texto(filtros.busca)}%`
+	const busca = texto(filtros.busca)
+	if (busca) {
+		if (busca.length > 100) throw new AppError("A busca pode ter no máximo 100 caracteres")
+		// % e _ são curingas do LIKE: escapados, a pessoa busca exatamente o que digitou
+		const termo = `%${busca.replace(/[\\%_]/g, "\\$&")}%`
 		where[Op.or] = [{ nome: { [Op.like]: termo } }, { descricao: { [Op.like]: termo } }]
 	}
 
 	if (filtros.precoMin !== undefined || filtros.precoMax !== undefined) {
 		where.preco = {}
-		if (filtros.precoMin !== undefined) where.preco[Op.gte] = paraNumero(filtros.precoMin, "precoMin")
-		if (filtros.precoMax !== undefined) where.preco[Op.lte] = paraNumero(filtros.precoMax, "precoMax")
+		const min = filtros.precoMin !== undefined ? paraNumero(filtros.precoMin, "precoMin") : null
+		const max = filtros.precoMax !== undefined ? paraNumero(filtros.precoMax, "precoMax") : null
+		if ((min !== null && min < 0) || (max !== null && max < 0)) {
+			throw new AppError("O preço não pode ser negativo")
+		}
+		if (min !== null && max !== null && min > max) {
+			throw new AppError("O preço mínimo não pode ser maior que o máximo")
+		}
+		if (min !== null) where.preco[Op.gte] = min
+		if (max !== null) where.preco[Op.lte] = max
 	}
 
 	if (filtros.promocao !== undefined) {
 		where.promocao = paraBooleano(filtros.promocao, "promocao")
+	}
+
+	// ?emEstoque=true esconde os esgotados
+	if (filtros.emEstoque !== undefined && paraBooleano(filtros.emEstoque, "emEstoque")) {
+		where.estoque = { [Op.gt]: 0 }
 	}
 
 	const ordenar = filtros.ordenar || "recentes"
@@ -136,10 +153,20 @@ async function listar(filtros = {}, ehAdmin = false) {
 		throw new AppError(`Ordenação inválida. Use: ${Object.keys(ORDENACOES).join(", ")}`)
 	}
 
+	// ?limite=6 (usado pelas sugestões da busca). Sem limite, traz todos.
+	let limit
+	if (filtros.limite !== undefined) {
+		limit = paraNumero(filtros.limite, "limite")
+		if (!Number.isInteger(limit) || limit < 1 || limit > 50) {
+			throw new AppError("O limite precisa ser um número inteiro de 1 a 50")
+		}
+	}
+
 	const produtos = await Produto.findAll({
 		where,
 		include: [INCLUDE_CATEGORIA],
-		order: ORDENACOES[ordenar]
+		order: ORDENACOES[ordenar],
+		limit
 	})
 
 	return produtos.map(formatar)

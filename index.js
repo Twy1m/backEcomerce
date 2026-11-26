@@ -13,6 +13,7 @@ const favoritoRouter = require('./routes/favorito.routes')
 const carrinhoRouter = require('./routes/carrinho.routes')
 const cupomRouter = require('./routes/cupom.routes')
 const pedidoRouter = require('./routes/pedido.routes')
+const enderecoRouter = require('./routes/endereco.routes')
 
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
@@ -31,6 +32,7 @@ app.use('/favoritos', favoritoRouter)
 app.use('/carrinho', carrinhoRouter)
 app.use('/cupons', cupomRouter)
 app.use('/pedidos', pedidoRouter)
+app.use('/enderecos', enderecoRouter)
 
 
 app.use((req, res) => {
