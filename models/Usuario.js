@@ -29,6 +29,16 @@ const Usuario = conn.define(
 			type: DataTypes.ENUM("admin", "user"),
 			allowNull: false,
 			defaultValue: "user"
+		},
+		// bloqueio da conta de admin depois de várias senhas erradas (ver auth.service)
+		falhasLogin: {
+			type: DataTypes.INTEGER,
+			allowNull: false,
+			defaultValue: 0
+		},
+		bloqueadoAte: {
+			type: DataTypes.DATE,
+			allowNull: true
 		}
 	},
 	{

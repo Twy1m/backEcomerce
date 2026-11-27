@@ -5,12 +5,14 @@ const AppError = require("../utils/AppError")
 const validarCpf = require("../utils/validarCpf")
 
 const SALT_ROUNDS = 10
-const SEM_SENHA = { exclude: ["senha"] }
+// campos internos que nunca saem nas respostas
+const CAMPOS_PRIVADOS = ["senha", "falhasLogin", "bloqueadoAte"]
+const SEM_SENHA = { exclude: CAMPOS_PRIVADOS }
 
-// Converte o model em objeto e tira a senha antes de devolver
+// Converte o model em objeto e tira a senha (e os campos de bloqueio) antes de devolver
 function semSenha(usuario) {
 	const dados = usuario.toJSON()
-	delete dados.senha
+	CAMPOS_PRIVADOS.forEach((campo) => delete dados[campo])
 	return dados
 }
 
@@ -71,10 +73,24 @@ async function buscarPorId(id) {
 }
 
 // Só nome, e-mail e senha podem ser alterados. O tipo (admin/user) fica de fora de propósito.
-async function atualizar(id, { nome, email, senha }) {
+// Trocar e-mail ou senha exige a senha atual: assim, quem pegar um token (ex.: computador
+// compartilhado) não consegue tomar a conta. Para mudar só o nome, não precisa.
+async function atualizar(id, { nome, email, senha, senhaAtual }) {
 	const usuario = await Usuario.findByPk(id)
 	if (!usuario) {
 		throw new AppError("Usuário não encontrado", 404)
+	}
+
+	const trocaEmail = email !== undefined && normalizarEmail(email) !== usuario.email
+	const trocaSenha = senha !== undefined
+	if (trocaEmail || trocaSenha) {
+		if (!senhaAtual) {
+			throw new AppError("Informe sua senha atual para trocar o e-mail ou a senha")
+		}
+		const confere = await bcrypt.compare(String(senhaAtual), usuario.senha)
+		if (!confere) {
+			throw new AppError("Senha atual incorreta", 403)
+		}
 	}
 
 	if (nome !== undefined) {

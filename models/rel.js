@@ -9,6 +9,20 @@ const ItemCarrinho = require("./ItensCarrinho")
 const Favorito = require("./Favoritos")
 const Cupom = require("./Cupons")
 const Endereco = require("./Enderecos")
+const CodigoVerificacao = require("./CodigosVerificacao")
+
+// excluir o usuário apaga os códigos de verificação dele junto
+Usuario.hasMany(CodigoVerificacao, {
+	foreignKey: "idUsuario",
+	as: "codigosVerificacao",
+	onDelete: "CASCADE"
+})
+
+CodigoVerificacao.belongsTo(Usuario, {
+	foreignKey: "idUsuario",
+	as: "usuario",
+	onDelete: "CASCADE"
+})
 
 // excluir o usuário apaga os endereços dele junto
 Usuario.hasMany(Endereco, {
@@ -176,5 +190,6 @@ module.exports = {
 	ItemCarrinho,
 	Favorito,
 	Cupom,
-	Endereco
+	Endereco,
+	CodigoVerificacao
 }
